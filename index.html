@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hex Color Generator</title>
+  <style>
+    :root {
+      --md-primary: #415f91;
+      --md-on-primary: #ffffff;
+      --md-primary-container: #d6e3ff;
+      --md-on-primary-container: #001b3e;
+      --md-surface: #f9f9ff;
+      --md-on-surface: #191c20;
+      --md-surface-variant: #e0e2ec;
+      --md-on-surface-variant: #44474e;
+      --md-outline: #74777f;
+      --md-outline-variant: #c4c6d0;
+      --md-surface-container-lowest: #ffffff;
+      --md-surface-container-low: #f3f3fa;
+      --md-surface-container: #ededf4;
+      --md-surface-container-high: #e7e8ee;
+      --md-surface-container-highest: #e1e2e8;
+      --md-error: #ba1a1a;
+      --md-background: #f9f9ff;
+      --md-on-background: #191c20;
+      --md-elevation-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+      --md-elevation-2: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--md-background);
+      color: var(--md-on-background);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--md-surface-container-low);
+      color: var(--md-on-surface);
+      border-radius: 28px;
+      padding: 2rem;
+      box-shadow: var(--md-elevation-1);
+    }
+
+    .top-bar { margin-bottom: 0.5rem; }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--md-on-surface);
+      line-height: 1.3;
+    }
+
+    .subhead {
+      font-size: 0.875rem;
+      color: var(--md-on-surface-variant);
+      margin-top: 0.35rem;
+    }
+
+    .converter-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.75rem 0;
+    }
+
+    .md-field {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background-color: transparent;
+      border: 1px solid var(--md-outline);
+      border-radius: 4px;
+      transition: border-color 150ms cubic-bezier(0.2, 0, 0, 1);
+      height: 56px;
+    }
+
+    .md-field:hover { border-color: var(--md-on-surface); }
+
+    .md-field:focus-within {
+      border-color: var(--md-primary);
+      border-width: 2px;
+    }
+
+    .md-field.invalid { border-color: var(--md-error); }
+    .md-field.invalid:focus-within { border-color: var(--md-error); }
+
+    .md-field .field-label {
+      position: absolute;
+      top: -8px;
+      left: 12px;
+      background-color: var(--md-surface-container-low);
+      padding: 0 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--md-on-surface-variant);
+      letter-spacing: 0.5px;
+      transition: color 150ms cubic-bezier(0.2, 0, 0, 1);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .md-field:focus-within .field-label { color: var(--md-primary); }
+    .md-field.invalid .field-label { color: var(--md-error); }
+
+    .md-field input {
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      padding: 0 3rem 0 1rem;
+      font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--md-on-surface);
+      outline: none;
+      border-radius: inherit;
+    }
+
+    .md-field input::placeholder {
+      color: var(--md-on-surface-variant);
+      opacity: 0.7;
+      font-weight: 400;
+    }
+
+    .copy-btn {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: 9999px;
+      color: var(--md-on-surface-variant);
+      cursor: pointer;
+      transition: background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+                  color 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .copy-btn:hover { background-color: var(--md-surface-container-high); color: var(--md-on-surface); }
+    .copy-btn:active { background-color: var(--md-surface-container-highest); }
+
+    .copy-btn:focus-visible {
+      outline: 2px solid var(--md-primary);
+      outline-offset: 2px;
+    }
+
+    .copy-btn svg { width: 18px; height: 18px; }
+
+    .copy-btn.copied { color: var(--md-primary); }
+
+    .preview-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .color-preview {
+      width: 80px;
+      height: 80px;
+      display: block;
+      cursor: pointer;
+      transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.18));
+    }
+
+    .color-preview:hover { transform: scale(1.04); }
+
+    .color-preview:focus-visible {
+      outline: 2px solid var(--md-primary);
+      outline-offset: 4px;
+    }
+
+    /* Little pop when an easter egg is matched. */
+    .color-preview.egg {
+      animation: egg-pop 500ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes egg-pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.18); }
+      70%  { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+
+    .picker-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background-color: var(--md-surface-container-high);
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--md-on-surface-variant);
+      cursor: pointer;
+      transition: background-color 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .picker-btn:hover { background-color: var(--md-surface-container-highest); }
+
+    .picker-btn input[type="color"] {
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      border-radius: 9999px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .picker-btn input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .picker-btn input[type="color"]::-webkit-color-swatch {
+      border: 2px solid var(--md-surface-container-lowest);
+      border-radius: 9999px;
+    }
+
+    .generator-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background-color: var(--md-surface-container);
+      padding: 0.75rem 0.75rem 0.75rem 1.25rem;
+      border-radius: 9999px;
+    }
+
+    .generator-row .label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--md-on-surface-variant);
+      white-space: nowrap;
+    }
+
+    .random-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      border: 2px solid var(--md-surface-container-lowest);
+      box-shadow: var(--md-elevation-1);
+      flex-shrink: 0;
+    }
+
+    .hex-display {
+      flex: 1;
+      min-width: 0;
+      font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+      font-weight: 500;
+      font-size: 1.125rem;
+      color: var(--md-on-surface);
+      background-color: var(--md-surface-container-lowest);
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      border: 1px dashed var(--md-outline-variant);
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+                  color 150ms cubic-bezier(0.2, 0, 0, 1),
+                  border-color 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .hex-display:hover {
+      background-color: var(--md-surface-container-high);
+      border-color: var(--md-outline);
+    }
+
+    .hex-display:focus-visible {
+      outline: 2px solid var(--md-primary);
+      outline-offset: 2px;
+    }
+
+    .hex-display.copied { color: var(--md-primary); }
+
+    .hex-display .inline-icon {
+      display: inline-flex;
+      align-items: center;
+      opacity: 0.5;
+      transition: opacity 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .hex-display:hover .inline-icon { opacity: 1; }
+    .hex-display .inline-icon svg { width: 16px; height: 16px; }
+
+    .btn {
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      font-family: inherit;
+      font-weight: 500;
+      font-size: 0.875rem;
+      letter-spacing: 0.1px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+                  box-shadow 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .btn-primary {
+      background-color: var(--md-primary);
+      color: var(--md-on-primary);
+    }
+
+    .btn-primary:hover { box-shadow: var(--md-elevation-1); }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--md-primary);
+      outline-offset: 2px;
+    }
+
+    .btn svg { width: 18px; height: 18px; }
+
+    .footnote {
+      font-size: 0.75rem;
+      color: var(--md-on-surface-variant);
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--md-outline-variant);
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .footnote code {
+      background-color: var(--md-surface-container-high);
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.7rem;
+      color: var(--md-on-surface);
+    }
+
+    .footnote .hint {
+      font-style: italic;
+      opacity: 0.85;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 640px) {
+      .card { padding: 1.5rem 1.25rem; }
+      .converter-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+      .preview-block { order: -1; }
+      .generator-row {
+        flex-wrap: wrap;
+        justify-content: center;
+        border-radius: 24px;
+        padding: 1rem;
+      }
+      .hex-display { width: 100%; }
+      h1 { font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top-bar">
+      <h1>Hex Color Generator</h1>
+      <div class="subhead">Convert, preview, generate</div>
+    </div>
+
+    <div class="converter-grid">
+      <div class="md-field" id="hexField">
+        <span class="field-label">HEX</span>
+        <input type="text" id="hexInput" value="#4682b4" maxlength="7" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-label="Hex color value">
+        <button type="button" class="copy-btn" id="copyHexBtn" aria-label="Copy hex value">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="preview-block">
+        <svg class="color-preview" id="colorPreview" viewBox="0 0 80 80" role="button" tabindex="0" aria-label="Current color preview. Click to open color picker.">
+          <circle id="colorPreviewCircle" cx="40" cy="40" r="38" fill="#4682b4" stroke="#f3f3fa" stroke-width="4"/>
+        </svg>
+        <label class="picker-btn">
+          <input type="color" id="nativeColorPicker" value="#4682b4" aria-label="Pick a color">
+          <span>Pick</span>
+        </label>
+      </div>
+
+      <div class="md-field" id="colorField">
+        <span class="field-label">COLOR</span>
+        <input type="text" id="colorInput" value="steelblue" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-label="Color name or value">
+        <button type="button" class="copy-btn" id="copyColorBtn" aria-label="Copy color value">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="generator-row">
+      <div class="label">Next random</div>
+      <div class="random-swatch" id="randomSwatch" title="Preview of the next random color"></div>
+      <button type="button" class="hex-display" id="randomHexDisplay" aria-label="Copy random hex value" title="Click to copy">
+        <span id="randomHexText">#4682b4</span>
+        <span class="inline-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </span>
+      </button>
+      <button class="btn btn-primary" id="generateBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+          <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>
+        Generate
+      </button>
+    </div>
+
+    <div class="footnote">
+      <span><code>hex to color</code> <code>color to hex</code></span>
+      <span class="hint">psst — try typing a brand or theme name</span>
+    </div>
+
+    <div id="liveRegion" class="sr-only" aria-live="polite"></div>
+  </div>
+
+  <script type="module">
+    const hexInput = document.getElementById('hexInput');
+    const colorInput = document.getElementById('colorInput');
+    const hexField = document.getElementById('hexField');
+    const colorField = document.getElementById('colorField');
+    const colorPreview = document.getElementById('colorPreview');
+    const colorPreviewCircle = document.getElementById('colorPreviewCircle');
+    const nativePicker = document.getElementById('nativeColorPicker');
+    const randomHexDisplay = document.getElementById('randomHexDisplay');
+    const randomHexText = document.getElementById('randomHexText');
+    const randomSwatch = document.getElementById('randomSwatch');
+    const generateBtn = document.getElementById('generateBtn');
+    const liveRegion = document.getElementById('liveRegion');
+    const copyHexBtn = document.getElementById('copyHexBtn');
+    const copyColorBtn = document.getElementById('copyColorBtn');
+
+    const probeEl = document.createElement('div');
+    probeEl.style.position = 'absolute';
+    probeEl.style.left = '-9999px';
+    probeEl.style.width = '1px';
+    probeEl.style.height = '1px';
+    probeEl.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(probeEl);
+
+    // Easter eggs. Case-insensitive, whitespace- and hyphen-insensitive,
+    // so "github dark", "GitHubDark", and "github-dark" all match.
+    // Checked before CSS parsing, so they take priority over any
+    // coincidentally-named CSS color.
+    const ALIASES = {
+      // Dev tools and editor themes
+      githubdark:   '#0d1117',
+      githublight:  '#ffffff',
+      vscode:       '#007acc',
+      dracula:      '#282a36',
+      nord:         '#2e3440',
+      monokai:      '#272822',
+      gruvbox:      '#282828',
+      catppuccin:   '#1e1e2e',
+      tokyonight:   '#1a1b26',
+      synthwave:    '#2b213a',
+      onedark:      '#282c34',
+
+      // Brands
+      discord:      '#5865f2',
+      spotify:      '#1db954',
+      netflix:      '#e50914',
+      youtube:      '#ff0000',
+      twitch:       '#9146ff',
+      reddit:       '#ff4500',
+      stackoverflow:'#f48024',
+      figma:        '#f24e1e',
+
+      // Languages and frameworks
+      javascript:   '#f7df1e',
+      typescript:   '#3178c6',
+      python:       '#3776ab',
+      rust:         '#ce422b',
+      react:        '#61dafb',
+      vue:          '#4fc08d',
+      svelte:       '#ff3e00',
+      tailwind:     '#06b6d4',
+
+      // Internet culture
+      sus:          '#c51111',
+      stonks:       '#00c805',
+      thisisfine:   '#ff6600',
+      nyan:         '#ff69b4',
+      doge:         '#c2a633',
+      bruh:         '#666666',
+      cursed:       '#6b21a8',
+      blessed:      '#fbbf24',
+      uwu:          '#ffb6c1',
+
+      // Misc
+      coffee:       '#6f4e37',
+      matcha:       '#9acd32',
+      avocado:      '#568203',
+      taco:         '#f9c74f',
+      midnight:     '#191970',
+      sunset:       '#ff7e5f',
+      void:         '#000000',
+    };
+
+    const toHexByte = n => n.toString(16).padStart(2, '0');
+    const rgbToHex = (r, g, b) => `#${toHexByte(r)}${toHexByte(g)}${toHexByte(b)}`;
+
+    const HEX_SHORTHAND = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i;
+    const HEX_FULL = /^#?([0-9a-f]{6})$/i;
+    const RGB_RGBA = /^rgba?\(\s*(?<r>\d+)\s*,\s*(?<g>\d+)\s*,\s*(?<b>\d+)(?:\s*,\s*(?<a>[\d.]+))?\s*\)$/;
+
+    function normalizeHex(hex) {
+      if (!hex) return null;
+      const trimmed = String(hex).trim();
+      const short = trimmed.match(HEX_SHORTHAND);
+      if (short) {
+        return `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`.toLowerCase();
+      }
+      const full = trimmed.match(HEX_FULL);
+      return full ? `#${full[1].toLowerCase()}` : null;
+    }
+
+    // Returns the hex for a known easter egg name, or null.
+    function lookupAlias(name) {
+      if (!name) return null;
+      const key = name.trim().toLowerCase().replace(/[\s-]+/g, '');
+      return ALIASES[key] ?? null;
+    }
+
+    // Resolves any CSS color string to a #rrggbb hex, or null if the
+    // browser rejects it. Easter egg names are checked first. An invalid
+    // assignment leaves style.color unchanged, so clearing it first and
+    // checking for emptiness after the assignment is how we detect
+    // failure — otherwise getComputedStyle returns the inherited color.
+    function colorToHex(colorStr) {
+      if (!colorStr?.trim()) return null;
+
+      const alias = lookupAlias(colorStr);
+      if (alias) return alias;
+
+      probeEl.style.color = '';
+      probeEl.style.color = colorStr;
+      if (probeEl.style.color === '') return null;
+
+      const computed = getComputedStyle(probeEl).color;
+      const m = computed.match(RGB_RGBA);
+      if (!m) return null;
+
+      const { r, g, b, a = '1' } = m.groups;
+      if (parseFloat(a) === 0) return null;
+
+      return rgbToHex(+r, +g, +b);
+    }
+
+    const randomHex = () => `#${Math.floor(Math.random() * 0x1000000).toString(16).padStart(6, '0')}`;
+
+    function setColor(hex) {
+      const normalized = normalizeHex(hex);
+      if (!normalized) return false;
+
+      colorPreviewCircle.setAttribute('fill', normalized);
+      colorPreviewCircle.style.fill = normalized;
+
+      colorPreview.setAttribute('aria-label', `Current color ${normalized}. Click to open color picker.`);
+      colorPreview.setAttribute('title', normalized);
+      nativePicker.value = normalized;
+
+      hexField.classList.remove('invalid');
+      colorField.classList.remove('invalid');
+      return true;
+    }
+
+    // Restartable CSS animation on the swatch. Removing and re-adding the
+    // class alone isn't enough — the browser needs a reflow between them
+    // to notice the animation should replay.
+    function pulseEgg() {
+      colorPreview.classList.remove('egg');
+      void colorPreview.offsetWidth;
+      colorPreview.classList.add('egg');
+    }
+
+    const markInvalid = field => field.classList.add('invalid');
+
+    async function writeToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          // fall through
+        }
+      }
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch {
+        ok = false;
+      }
+      document.body.removeChild(ta);
+      return ok;
+    }
+
+    function flashCopied(el) {
+      el.classList.add('copied');
+      setTimeout(() => el.classList.remove('copied'), 1200);
+    }
+
+    const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+    const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+    function flashIcon(btn) {
+      btn.innerHTML = CHECK_ICON;
+      flashCopied(btn);
+      setTimeout(() => { btn.innerHTML = COPY_ICON; }, 1200);
+    }
+
+    async function copyValue(text) {
+      if (!text) return false;
+      const ok = await writeToClipboard(text);
+      liveRegion.textContent = ok ? `Copied ${text}` : 'Copy failed';
+      return ok;
+    }
+
+    let announceTimer = null;
+    function announce(message) {
+      if (announceTimer) clearTimeout(announceTimer);
+      announceTimer = setTimeout(() => {
+        liveRegion.textContent = message;
+      }, 400);
+    }
+
+    function handleHexInput() {
+      const raw = hexInput.value.trim();
+      if (raw === '') {
+        hexField.classList.remove('invalid');
+        return;
+      }
+      const normalized = normalizeHex(raw);
+      if (!normalized) {
+        markInvalid(hexField);
+        return;
+      }
+      setColor(normalized);
+      colorInput.value = normalized;
+      if (raw !== normalized) hexInput.value = normalized;
+      announce(`Color ${normalized}`);
+    }
+
+    function handleColorInput() {
+      const raw = colorInput.value;
+      if (raw.trim() === '') {
+        colorField.classList.remove('invalid');
+        return;
+      }
+      const hex = colorToHex(raw);
+      if (!hex) {
+        markInvalid(colorField);
+        return;
+      }
+      setColor(hex);
+      hexInput.value = hex;
+
+      // If the input matched an easter egg, celebrate it.
+      if (lookupAlias(raw)) {
+        pulseEgg();
+        announce(`Easter egg! ${raw} is ${hex}`);
+      } else {
+        announce(`${raw} is ${hex}`);
+      }
+    }
+
+    function handlePickerInput(e) {
+      const hex = normalizeHex(e.target.value);
+      if (!hex) return;
+      setColor(hex);
+      hexInput.value = hex;
+      colorInput.value = hex;
+      announce(`Color ${hex}`);
+    }
+
+    function previewNextRandom() {
+      const hex = randomHex();
+      randomHexText.textContent = hex;
+      randomSwatch.style.backgroundColor = hex;
+      return hex;
+    }
+
+    function handleGenerate() {
+      const hex = normalizeHex(randomHexText.textContent) ?? randomHex();
+      setColor(hex);
+      hexInput.value = hex;
+      colorInput.value = hex;
+      announce(`Applied ${hex}`);
+      setTimeout(previewNextRandom, 100);
+    }
+
+    async function copyCurrentHex() {
+      const hex = normalizeHex(hexInput.value);
+      if (!hex) {
+        announce('Nothing valid to copy');
+        return;
+      }
+      if (await copyValue(hex)) flashIcon(copyHexBtn);
+    }
+
+    async function copyCurrentColor() {
+      const raw = colorInput.value.trim();
+      if (!raw) {
+        announce('Nothing to copy');
+        return;
+      }
+      const text = normalizeHex(raw) ?? raw;
+      if (await copyValue(text)) flashIcon(copyColorBtn);
+    }
+
+    async function copyRandomHex() {
+      const hex = normalizeHex(randomHexText.textContent);
+      if (!hex) return;
+      if (await copyValue(hex)) {
+        flashCopied(randomHexDisplay);
+        const icon = randomHexDisplay.querySelector('.inline-icon');
+        if (icon) {
+          const original = icon.innerHTML;
+          icon.innerHTML = CHECK_ICON;
+          setTimeout(() => { icon.innerHTML = original; }, 1200);
+        }
+      }
+    }
+
+    const openPicker = () => nativePicker.click();
+
+    hexInput.addEventListener('input', handleHexInput);
+    colorInput.addEventListener('input', handleColorInput);
+    nativePicker.addEventListener('input', handlePickerInput);
+    colorPreview.addEventListener('click', openPicker);
+    colorPreview.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openPicker();
+      }
+    });
+    generateBtn.addEventListener('click', handleGenerate);
+
+    copyHexBtn.addEventListener('click', copyCurrentHex);
+    copyColorBtn.addEventListener('click', copyCurrentColor);
+    randomHexDisplay.addEventListener('click', copyRandomHex);
+
+    setColor('#4682b4');
+    randomHexText.textContent = '#4682b4';
+    randomSwatch.style.backgroundColor = '#4682b4';
+  </script>
+</body>
+</html>
